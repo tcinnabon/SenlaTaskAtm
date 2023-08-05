@@ -8,16 +8,13 @@ public class BankAccount {
         this.balanceCard = balanceCard;
     }
 
-    public void topUpAccount(int money){
-        balanceCard+=money;
-    }
-
-    public void withdrawMoney(int money){
-        balanceCard -=money;
-    }
-
-    public int checkCardBalance(){
+    public int getBalanceCard() {
         return balanceCard;
     }
+
+    public void setBalanceCard(int balanceCard) {
+        this.balanceCard = balanceCard;
+    }
+
 
 }

@@ -5,40 +5,41 @@ import eu.senla.atm.model.BankCard;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
 public class BankCardDao {
 
-    private ArrayList<BankCard> bankCards;
+    private final ArrayList<BankCard> bankCards;
     public BankCardDao(){
         bankCards = new ArrayList<>();
     }
-    public void add(BankCard bankCard){
+    public void addCards(BankCard bankCard){
         bankCards.add(bankCard);
     }
     public BankCard getCardByNum(String numberCard){
-        for(int i =0; i < bankCards.size(); i++){
-            if(Objects.equals(bankCards.get(i).getNumberCard(), numberCard)){
-                return bankCards.get(i);
+        for (BankCard bankCard : bankCards) {
+            if (Objects.equals(bankCard.getNumberCard(), numberCard)) {
+                return bankCard;
             }
 
         }
         return  null;
 
     }
-    public ArrayList<BankCard> save(FileWriter writer ) throws IOException {
-        for (int i =0; i < bankCards.size(); i++){
-            writer.write(" " + bankCards.get(i).getNumberCard());
-            writer.write(" " + bankCards.get(i).getPinCod());
-            writer.write(" " + bankCards.get(i).getBalanceCardFromBankAccaount());
-            writer.write(" " + bankCards.get(i).getDateLocked());
+    public void save(FileWriter writer ) throws IOException {
+        for (BankCard bankCard : bankCards) {
+            writer.write(" " + bankCard.getNumberCard());
+            writer.write(" " + bankCard.getPinCod());
+            writer.write(" " + bankCard.getBankAccount().getBalanceCard());
+            writer.write(" " + bankCard.getDateLocked());
         }
-
-        return bankCards;
     }
-    public void download(){ }
-
-
-
+    public void load(String[] date) {
+        for(int i =0; i < date.length; ){
+            addCards(new BankCard(date[i],
+                    date[i+1],Integer.parseInt(date[i+2]),
+                    Long.parseLong(date[i+3])));
+            i += 4;
+        }
+    }
 }

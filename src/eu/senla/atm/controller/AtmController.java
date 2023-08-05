@@ -2,15 +2,22 @@ package eu.senla.atm.controller;
 
 import eu.senla.atm.dao.AtmDao;
 import eu.senla.atm.exception.*;
+
 import eu.senla.atm.model.BankCard;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
+import java.io.BufferedReader;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 public class AtmController {
 
+    private static final String  FILE_NAME = "data.txt";
 
-    private BankCardController bankCardController;
-    private AtmDao atmDao;
+    private final BankCardController bankCardController;
+    private final AtmDao atmDao;
     private BankCard currentCard;
 
     public AtmController(BankCardController bankCardController, AtmDao atmDao) {
@@ -20,9 +27,6 @@ public class AtmController {
 
     public boolean authorize(String pinCod){
 
-       if (!checkCardPinCod(pinCod)) {
-            throw new IncorrectPinException();
-        }
         if(!bankCardController.authorize(currentCard, pinCod)){
          throw new WrongPincodeException();
         }
@@ -30,102 +34,67 @@ public class AtmController {
 
     }
     public boolean cardNumberCheck(BankCard bankCard) {
-        if(!checkCardNumber(bankCard.getNumberCard())){
-            throw new IncorrectNumberException();
+        currentCard = bankCardController.getCard(bankCard);
+        if (currentCard.getDateLocked()!=0){
+            if(!bankCardController.CardIsNotBlock(currentCard)){
+                throw new BankCardBlocked();
+            }else {
+                update();
+            }
+
         }
-        BankCard authorizedBankCard = bankCardController.getCard(bankCard);
-        currentCard = authorizedBankCard;
         return true;
-
     }
-    public boolean download(){
-        String data[] = atmDao.download();
-        if(data!=null) {
-            bankCardController.addCard(data);
+    public boolean load(){
+        try (BufferedReader reader = Files.newBufferedReader(Paths.get(FILE_NAME))) {
+            String dateFile = reader.readLine();
+            String s = dateFile.substring(0,dateFile.indexOf(" "));
+            atmDao.load(Integer.parseInt(s));
+            bankCardController.load(dateFile.substring(dateFile.indexOf(" ")+1));
             return true;
         }
-        return false;
-    }
-
-    private boolean checkCardNumber(String numberCard){
-        String templateCard = "^[0-9]{4}[\\-][0-9]{4}[\\-][0-9]{4}[\\-][0-9]{4}";
-        Matcher m = Pattern.compile(templateCard).matcher(numberCard);
-        if (m.find( )) {
-            return true;
-        }else {
+        catch (Exception e){
             return false;
         }
-
-
-    }
-
-    private static boolean checkCardPinCod(String pinCodCard){
-        String templatePinCod = "^[0-9]{4}$";
-        Matcher m = Pattern.compile(templatePinCod).matcher(pinCodCard);
-        if (m.find( )) {
-            return true;
-        }else {
-            return false;
-        }
-
     }
 
     public void update(){
-        atmDao.save(bankCardController.getBankCardDao());
-        //fileUpdate(atmDao.returnAtm(), (ArrayList<BankCard>) bankCardController.save());
-
+        try (FileOutputStream fos = new FileOutputStream(FILE_NAME, false)) {
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try (FileWriter writer = new FileWriter(FILE_NAME, true)){
+            atmDao.save(writer);
+            bankCardController.save(writer);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
     }
-//    public void fileUpdate(Atm atm, ArrayList<BankCard> bankCards) {
-//        try (FileOutputStream fos = new FileOutputStream(FILE_NAME, false)) { }
-//        catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//        try (FileWriter writer = new FileWriter(FILE_NAME, true)){
-//            int a = atm.getAmountMoney();
-//            writer.write(String.valueOf(a));
-//            for (int i =0; i < bankCards.size(); i++){
-//                writer.write(" " + bankCards.get(i).getNumberCard());
-//                writer.write(" " + bankCards.get(i).getPinCod());
-//                writer.write(" " + bankCards.get(i).getBalanceCardFromBankAccaount());
-//                writer.write(" " + bankCards.get(i).getDateLocked());
-//            }
-//            writer.close();
-//
-//        } catch (IOException e) {
-//            System.out.println("Возникла ошибка во время записи в файл");
-//        }
-//    }
 
 
     public int checkCardBalance() {
-        return currentCard.getBalanceCardFromBankAccaount();
+        return currentCard.getBankAccount().getBalanceCard();
     }
 
-    public boolean topUpAccount(String money){
-            if(Integer.parseInt(money) < 1_000_000){
-                if(Integer.parseInt(money) >0){
-                    currentCard.topUpBankAccount(Integer.parseInt(money));
-                    atmDao.topUpAtm(Integer.parseInt(money));
-                    return true;
-                }
-                throw new AmountMoneyException();
-            }
-            throw new AmountMoneyException();
-
-    }
-
-    public boolean withdrawMoney(String money) {
-        if(Integer.parseInt(money)< 0) {
-            throw new CashWithdrawalException();
+    public boolean topUpAccount(int money){
+        if(money < 1_000_000){
+                currentCard.getBankAccount().setBalanceCard(currentCard.getBankAccount().getBalanceCard() + money);
+                atmDao.getAtm().setAmountMoney(atmDao.getAtm().getAmountMoney()+money);
+                return true;
         }
-        else if(Integer.parseInt(money)> currentCard.getBalanceCardFromBankAccaount()){
+        throw new AmountMoneyException();
+
+    }
+    public boolean withdrawMoney(int money) {
+
+        if(money> currentCard.getBankAccount().getBalanceCard()){
             throw new NotEnoughMoneyException();
-        }else if (Integer.parseInt(money)> atmDao.returnAtm().getAmountMoney()){
+        }else if (money> atmDao.getAtm().getAmountMoney()){
             throw new NotEnoughMoneyAtmException();
         }else {
-            currentCard.withdrawMoneyBankAccount(Integer.parseInt(money));
-            atmDao.takeOff(Integer.parseInt(money));
-           return true;
+            currentCard.getBankAccount().setBalanceCard(currentCard.getBankAccount().getBalanceCard() - money);
+            atmDao.getAtm().setAmountMoney(atmDao.getAtm().getAmountMoney()-money);
+            return true;
         }
     }
 

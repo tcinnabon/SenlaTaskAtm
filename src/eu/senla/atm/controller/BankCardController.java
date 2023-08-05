@@ -5,30 +5,18 @@ import eu.senla.atm.exception.BankCardBlocked;
 import eu.senla.atm.exception.NotAuthorizedException;
 import eu.senla.atm.model.BankCard;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Date;
 import java.util.Objects;
 
 public class BankCardController {
 
-    private BankCardDao bankCardDao;
-
-    public BankCardDao getBankCardDao() {
-        return bankCardDao;
-    }
+    private final BankCardDao bankCardDao;
 
     public BankCardController(BankCardDao bankCardDao) {
         this.bankCardDao = bankCardDao;
     }
-
-    public void addCard(String data[]){
-        for(int i =0; i < data.length; ){
-            bankCardDao.add(new BankCard(data[i],
-                    data[i+1],Integer.parseInt(data[i+2]),
-                    Long.parseLong(data[i+3])));
-            i += 4;
-        }
-    }
-
     public BankCard getCard(BankCard bankCard){
         BankCard card = bankCardDao.getCardByNum(bankCard.getNumberCard());
         if(card==null){
@@ -39,7 +27,7 @@ public class BankCardController {
 
     public boolean authorize(BankCard currentCard, String pinCod){
         if(currentCard.getDateLocked()!=0) {
-            if(!CardIsBlock(currentCard)) {
+            if(!CardIsNotBlock(currentCard)) {
                 throw new BankCardBlocked();
             }
         }
@@ -53,7 +41,7 @@ public class BankCardController {
             if(currentCard.getNumberFailed()>=3){
                 Date date = new Date();
                 currentCard.setDateLocked(date.getTime());
-                currentCard.resetNumberFailed();
+                currentCard.setNumberFailed(0);
                 throw new BankCardBlocked();
             }
             return false;
@@ -62,13 +50,22 @@ public class BankCardController {
         return true;
 
     }
-    public boolean CardIsBlock(BankCard currentCard){
+    public boolean CardIsNotBlock(BankCard currentCard){
         long oneDayMls = 86_400_000;
         Date date = new Date();
         if (date.getTime() - currentCard.getDateLocked() >= oneDayMls) {
-            currentCard.resetDataLocked();
+            currentCard.setDateLocked(0);
             return true;
         }
         return false;
+    }
+
+    public void load(String dateString) {
+        String[] date = dateString.split(" ");
+        bankCardDao.load(date);
+    }
+
+    public void save(FileWriter writer) throws IOException {
+        bankCardDao.save(writer);
     }
 }
