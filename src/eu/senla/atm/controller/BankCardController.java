@@ -17,28 +17,29 @@ public class BankCardController {
     public BankCardController(BankCardDao bankCardDao) {
         this.bankCardDao = bankCardDao;
     }
-    public BankCard getCard(BankCard bankCard){
+
+    public BankCard getCard(BankCard bankCard) {
         BankCard card = bankCardDao.getCardByNum(bankCard.getNumberCard());
-        if(card==null){
+        if (card == null) {
             throw new NotAuthorizedException();
         }
         return card;
     }
 
-    public boolean authorize(BankCard currentCard, String pinCod){
-        if(currentCard.getDateLocked()!=0) {
-            if(!CardIsNotBlock(currentCard)) {
+    public boolean authorize(BankCard currentCard, String pinCod) {
+        if (currentCard.getDateLocked() != 0) {
+            if (!CardIsNotBlock(currentCard)) {
                 throw new BankCardBlocked();
             }
         }
         if (Objects.equals(currentCard.getPinCod(), pinCod)) {
-                if (currentCard.getDateLocked() != 0) {
-                    throw new BankCardBlocked();
-                }
+            if (currentCard.getDateLocked() != 0) {
+                throw new BankCardBlocked();
+            }
 
         } else {
             currentCard.setNumberFailed(currentCard.getNumberFailed() + 1);
-            if(currentCard.getNumberFailed()>=3){
+            if (currentCard.getNumberFailed() >= 3) {
                 Date date = new Date();
                 currentCard.setDateLocked(date.getTime());
                 currentCard.setNumberFailed(0);
@@ -50,7 +51,8 @@ public class BankCardController {
         return true;
 
     }
-    public boolean CardIsNotBlock(BankCard currentCard){
+
+    public boolean CardIsNotBlock(BankCard currentCard) {
         long oneDayMls = 86_400_000;
         Date date = new Date();
         if (date.getTime() - currentCard.getDateLocked() >= oneDayMls) {

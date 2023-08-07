@@ -9,10 +9,13 @@ public class AtmDao {
 
     private Atm atm;
 
-    public void setAtm(Atm atm){
+    public void setAtm(Atm atm) {
         this.atm = atm;
     }
-    public Atm getAtm(){return atm;}
+
+    public Atm getAtm() {
+        return atm;
+    }
 
     public void save(FileWriter writer) throws IOException {
         int a = atm.getAmountMoney();

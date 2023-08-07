@@ -19,6 +19,7 @@ public class BankCard {
         this.numberFailed = 0;
         this.dateLocked = dateLocked;
     }
+
     public BankAccount getBankAccount() {
         return bankAccount;
     }
@@ -35,8 +36,8 @@ public class BankCard {
         return pinCod;
     }
 
-    public int getNumberFailed(){
-        return  this.numberFailed;
+    public int getNumberFailed() {
+        return this.numberFailed;
     }
 
     public void setDateLocked(long dateLocked) {

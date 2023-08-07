@@ -10,23 +10,27 @@ import java.util.Objects;
 public class BankCardDao {
 
     private final ArrayList<BankCard> bankCards;
-    public BankCardDao(){
+
+    public BankCardDao() {
         bankCards = new ArrayList<>();
     }
-    public void addCards(BankCard bankCard){
+
+    public void addCards(BankCard bankCard) {
         bankCards.add(bankCard);
     }
-    public BankCard getCardByNum(String numberCard){
+
+    public BankCard getCardByNum(String numberCard) {
         for (BankCard bankCard : bankCards) {
             if (Objects.equals(bankCard.getNumberCard(), numberCard)) {
                 return bankCard;
             }
 
         }
-        return  null;
+        return null;
 
     }
-    public void save(FileWriter writer ) throws IOException {
+
+    public void save(FileWriter writer) throws IOException {
         for (BankCard bankCard : bankCards) {
             writer.write(" " + bankCard.getNumberCard());
             writer.write(" " + bankCard.getPinCod());
@@ -34,11 +38,12 @@ public class BankCardDao {
             writer.write(" " + bankCard.getDateLocked());
         }
     }
+
     public void load(String[] date) {
-        for(int i =0; i < date.length; ){
+        for (int i = 0; i < date.length; ) {
             addCards(new BankCard(date[i],
-                    date[i+1],Integer.parseInt(date[i+2]),
-                    Long.parseLong(date[i+3])));
+                    date[i + 1], Integer.parseInt(date[i + 2]),
+                    Long.parseLong(date[i + 3])));
             i += 4;
         }
     }

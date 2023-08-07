@@ -12,7 +12,7 @@ public class Atm {
         this.amountMoney = amountMoney;
     }
 
-    public  int getAmountMoney(){
+    public int getAmountMoney() {
         return this.amountMoney;
     }
 

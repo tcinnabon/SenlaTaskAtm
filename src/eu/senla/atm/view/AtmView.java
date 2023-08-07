@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
 
 public class AtmView {
 
-    private static final Scanner scanner= new Scanner(System.in);
+    private static final Scanner scanner = new Scanner(System.in);
     private static AtmController atmController;
 
     public AtmView(AtmController atmController) {
@@ -19,33 +19,38 @@ public class AtmView {
     }
 
     public void start() {
-        if (atmController.load())
-        {
+        if (atmController.load()) {
             while (true) {
                 try {
                     cardNumberEntry();
                     cardPinEntry();
                     mainMenuRun();
-                } catch (NotAuthorizedException | BankCardBlocked e) {
+                } catch (NotAuthorizedException | UpdateFileException e) {
                     System.out.println(e.getMessage());
 
+                } catch (BankCardBlocked e) {
+                    System.out.println(e.getMessage());
+                    try {
+                        atmController.update();
+                    } catch (UpdateFileException ex) {
+                        System.out.println(ex.getMessage());
+                    }
                 } catch (Exception e) {
                     System.out.println(e.getMessage());
                 }
-
-                atmController.update();
             }
-        }else{
+        } else {
             System.out.println("Возникла ошибка чтения из файла");
         }
     }
-    private void cardNumberEntry(){
+
+    private void cardNumberEntry() {
         boolean flagRun = false;
         do {
             try {
                 System.out.println("    Введите номер карты");
                 String numberCard = scanner.next();
-                if(!checkCardNumber(numberCard)){
+                if (!checkCardNumber(numberCard)) {
                     throw new IncorrectNumberException();
                 }
                 if (atmController.cardNumberCheck(new BankCard(numberCard))) {
@@ -57,15 +62,15 @@ public class AtmView {
         } while (!flagRun);
     }
 
-    private void cardPinEntry(){
+    private void cardPinEntry() {
         boolean flagRun = false;
         do {
             try {
                 System.out.println("    Введите пинкод карты");
                 String pinCod = scanner.next();
                 if (!checkCardPinCod(pinCod)) {
-                   throw new IncorrectPinException();
-                   }
+                    throw new IncorrectPinException();
+                }
                 if (atmController.authorize(pinCod)) {
                     flagRun = true;
                 }
@@ -75,7 +80,7 @@ public class AtmView {
         } while (!flagRun);
     }
 
-    private void mainMenuRun(){
+    private void mainMenuRun() {
         String menuSelection;
         while (true) {
             System.out.println("    1 - просмотреть баланс");
@@ -99,20 +104,21 @@ public class AtmView {
             atmController.update();
         }
     }
+
     private void withdrawMoney() {
         try {
             String money;
             System.out.print(" Введите сумму  ");
             money = scanner.next();
-            if(Integer.parseInt(money)<= 0) {
+            if (Integer.parseInt(money) <= 0) {
                 throw new CashWithdrawalException();
             }
-            if(atmController.withdrawMoney(Integer.parseInt(money))){
+            if (atmController.withdrawMoney(Integer.parseInt(money))) {
                 System.out.println("Денги успешно сняты");
             }
-        } catch (NumberFormatException | InputMismatchException e){
+        } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Некорректная денежная сумма");
-        }catch (CashWithdrawalException | NotEnoughMoneyException | NotEnoughMoneyAtmException e){
+        } catch (CashWithdrawalException | NotEnoughMoneyException | NotEnoughMoneyAtmException e) {
             System.out.println(e.getMessage());
         }
     }
@@ -122,25 +128,25 @@ public class AtmView {
             String money;
             System.out.print(" Введите сумму  ");
             money = scanner.next();
-            if(Integer.parseInt(money) <= 0){
+            if (Integer.parseInt(money) <= 0) {
                 throw new AmountMoneyException();
             }
             if (atmController.topUpAccount(Integer.parseInt(money))) {
                 System.out.println("Денги внесены успешно");
             }
-        }catch (AmountMoneyException e){
+        } catch (AmountMoneyException e) {
             System.out.println(e.getMessage());
-        }catch (NumberFormatException | InputMismatchException e){
+        } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Некорректная денежная сумма");
         }
     }
 
     private void getCheckBalance() {
-            System.out.println("Текущий бананс : " +  atmController.checkCardBalance());
+        System.out.println("Текущий бананс : " + atmController.checkCardBalance());
     }
 
 
-    private boolean checkCardNumber(String numberCard){
+    private boolean checkCardNumber(String numberCard) {
         String templateCard = "^[0-9]{4}[\\-][0-9]{4}[\\-][0-9]{4}[\\-][0-9]{4}";
         Matcher m = Pattern.compile(templateCard).matcher(numberCard);
         return m.find();
@@ -148,7 +154,7 @@ public class AtmView {
 
     }
 
-    private static boolean checkCardPinCod(String pinCodCard){
+    private static boolean checkCardPinCod(String pinCodCard) {
         String templatePinCod = "^[0-9]{4}$";
         Matcher m = Pattern.compile(templatePinCod).matcher(pinCodCard);
         return m.find();
